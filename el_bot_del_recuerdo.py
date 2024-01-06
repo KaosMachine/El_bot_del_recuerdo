@@ -39,7 +39,7 @@ client = OpenAI(api_key=api_key)
 
 
 # Display logo
-logo_url = ""
+logo_url = "https://firebasestorage.googleapis.com/v0/b/diario-ad840.appspot.com/o/DALL%C2%B7E%202023-11-07%2021.22.37%20-%20A%20robot%20poet%2C%20with%20a%20metallic%20structure%20and%20wires%20exposed%2C%20sits%20at%20a%20cluttered%20desk%20in%20a%20cosmic%20room%20fill"
 st.image(logo_url, use_column_width=True)
 
 with st.sidebar:
