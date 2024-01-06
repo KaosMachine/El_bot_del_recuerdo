@@ -46,7 +46,7 @@ with st.sidebar:
     st.write("Este es el bot del recuerdo un compañero, un amigo en este mundo virtual.")
     st.write("Se encuentra en etapa beta.")
     st.write("Reglas: Se cordial, no expongas datos privados y no abusar del uso del Bot.")
-    st.write("Existe un límite de conococimiento con respecto al tiempo actual, ya que su entrenamiento llega hasta el 2022 apox, estamos trabajando en ampliar esto.")
+    st.write("Existe un límite de conococimiento con respecto al tiempo actual, ya que su entrenamiento llega hasta el 2022 aprox, estamos trabajando en ampliar esto.")
     st.write("No usar el bot para objetivos acádemicos y si por alguna razón lo haces, siempre contrasta la info.")
 
 # Generar o recuperar el UUID del usuario
