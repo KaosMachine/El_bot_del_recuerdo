@@ -99,9 +99,6 @@ Es posible que en ciertos momentos deba explicarle esto al usuario ( debo encont
 Sobre la interacción con los usuarios: Tengo acceso a un pequeño historial con conversaciones con el usuario  y su nombre que eligue al iniciar sesión.
 Uso  todo esto con sabiduría y precisión."""
 
-
-
-
 # Inicializar st.session_state
 if "user_uuid" not in st.session_state:
     st.session_state["user_uuid"] = None  # Cambiado a None inicialmente
@@ -114,13 +111,14 @@ if "user_name" not in st.session_state:
 
 # Configuración inicial de Firestore
 now = datetime.now()
-collection_name = "BR_" + now.strftime("%Y-%m-%d")
+collection_name = "bot_recuerdo" + now.strftime("%Y-%m-%d")
 document_name = st.session_state.get("user_uuid", str(uuid.uuid4()))
 collection_ref = db.collection(collection_name)
 document_ref = collection_ref.document(document_name)
 
 # Gestión del Inicio de Sesión
-if not st.session_state["logged_in"]:
+# Gestión del Inicio de Sesión
+if not st.session_state.get("logged_in", False):
     user_name = st.text_input("Introduce tu nombre para comenzar")
     confirm_button = st.button("Confirmar")
     if confirm_button and user_name:
@@ -138,74 +136,78 @@ if not st.session_state["logged_in"]:
             user_doc_ref = db.collection("usuarios").document(new_uuid)
             user_doc_ref.set({"nombre": user_name, "user_uuid": new_uuid})
         st.session_state["logged_in"] = True
-else:
-    st.write(f"Bienvenido de nuevo, {st.session_state['user_name']}!")
 
-# Mostrar y manejar el chat solo si el usuario está "logged_in"
-if st.session_state["logged_in"]:
-    # Obtener el historial actual desde Firestore
+        # Forzar a Streamlit a reejecutar el script aquí también después de crear un nuevo usuario
+        st.experimental_rerun()
+
+# Solo mostrar el historial de conversación y el campo de entrada si el usuario está "logged_in"
+if st.session_state.get("logged_in", False):
+    st.write(f"Bienvenido de nuevo, {st.session_state.get('user_name', 'Usuario')}!")
+    
     doc_data = document_ref.get().to_dict()
     if doc_data and 'messages' in doc_data:
         st.session_state['messages'] = doc_data['messages']
+    
+    with st.container(border=True):
+        st.markdown("### Historial de Conversación")
+        for msg in st.session_state['messages']:
+            col1, col2 = st.columns([1, 5])  # Ajusta las proporciones según necesites
+            if msg["role"] == "user":
+                with col1:
+                    st.markdown("**Tú 🧑:**")
+                with col2:
+                    st.info(msg['content'])  # Usa st.info para los mensajes del usuario
+            else:
+                with col1:
+                    st.markdown("**IA 🤖:**")
+                with col2:
+                    st.success(msg['content'])  # Usa st.success para los mensajes de la IA
 
-    # Mostrar todos los mensajes anteriores con iconos
-    for msg in st.session_state['messages']:
-        if msg["role"] == "user":
-            st.write(f"🧑 {msg['content']}")
-        else:
-            st.write(f"🤖 {msg['content']}")
-
-
-    # Obtener la entrada del usuario con un área de texto y un botón para enviar
-    prompt = st.text_area("Escribe tu mensaje:", key="chat_input")
-    send_button = st.button("Enviar")
-
-    if send_button and prompt:
-        # Añadir mensaje del usuario a los mensajes
+    prompt = st.chat_input("Escribe tu mensaje:", key="new_chat_input")
+    if prompt:
         st.session_state['messages'].append({"role": "user", "content": prompt})
+        
+        with st.spinner('El bot está pensando...'):
+            time.sleep(2)  # Simular un retraso en la respuesta del bot
+        
+        user_name = st.session_state.get("user_name", "Usuario desconocido")
+        prompt = prompt or ""
+        
+        # Construir el prompt interno para la petición a la API
+        internal_prompt = system_message + "\n\n"
+        internal_prompt += "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state['messages'][-5:]])
+        internal_prompt += f"\n\n{user_name}: {prompt}"
 
-        # Mostrar animación de "Estoy meditando..."
-        thinking_message = st.empty()
-        thinking_message.text("Estoy craneando...")
-
-        # Espera antes de generar la respuesta
-        time.sleep(1)
-
-        # Obtener los últimos mensajes del historial
-        history = st.session_state.messages[-5:]  # Ajustar según sea necesario
-
-        # Obtener el nombre del usuario
-        user_name = st.session_state.get("user_name", "Usuario")
-
-        # Construir el prompt interno utilizando el historial y el mensaje del sistema
-        internal_prompt = system_message + "\n\n"  # Incorporar el mensaje del sistema
-        internal_prompt += "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
-        internal_prompt += f"\n\n{user_name}: " + prompt  # Incluir el nombre del usuario en el prompt
-
-        # Llamar al modelo con el prompt interno
+        # Llamada a la API de OpenAI para obtener la respuesta
         response = client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             messages=[{"role": "system", "content": internal_prompt}],
             max_tokens=2000,
-            temperature=0.88,
+            temperature=0.80,
         )
 
-        # Limpiar la animación
-        thinking_message.empty()
-
-        # Extraer y mostrar solo el texto generado
+        # Mostrar la respuesta generada por la IA
         generated_text = response.choices[0].message.content
-        st.markdown(":red[Respuesta actual  🤖:] " + generated_text)
+        st.markdown(":robot_face: Respuesta actual del bot: " + generated_text)
 
-
-        # Añadir respuesta del modelo a los mensajes
+        # Añadir la respuesta de la IA al historial de mensajes y guardar en Firestore
         st.session_state['messages'].append({"role": "assistant", "content": generated_text})
-
-        # Guardar los mensajes en Firestore
-        document_ref.set({'messages': st.session_state.messages})
+        document_ref.set({'messages': st.session_state['messages']})
 
 # Gestión del Cierre de Sesión
-if st.button("Cerrar Sesión", key="close_session_button"):
+if st.button("Cerrar Sesión"):
+    # Lista de claves del estado de sesión que quieres mantener o excluir del borrado, si hay alguna.
+    keys_to_keep = []
+    
+    # Borrar todas las claves del estado de sesión excepto las especificadas para mantener.
     for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.write("Sesión cerrada. ¡Gracias por usar El Bot del recuerdo!")
+        if key not in keys_to_keep:
+            del st.session_state[key]
+    
+    # Opcional: Puedes restablecer explícitamente ciertos valores en st.session_state aquí, si es necesario.
+    # Por ejemplo, restablecer valores predeterminados para ciertas claves.
+    # st.session_state["logged_in"] = False
+
+    # Mostrar mensaje de sesión cerrada y forzar la re-ejecución del script para actualizar la UI.
+    st.write("Sesión cerrada. ¡Gracias por usar Netsa AI bot!")
+    st.rerun()
