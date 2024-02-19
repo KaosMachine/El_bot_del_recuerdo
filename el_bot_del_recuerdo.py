@@ -67,10 +67,7 @@ Guía para usar el bot
 
 4) Cuando ya no quieras hablar con el bot, cierra sesión.
 
-5) Siempre usa el mismo nombre de sesión, esto te ayudará a recuperar la sesión.
-            
-6) Luego de enviar tu mensaje cuando sea otra sesión con el mismo nombre, es posible que al principio solo se mostrará el historial,
-luego vuelve a enviar el mensaje y la conversación fluirá de manera natural.""")
+5) Siempre usa el mismo nombre de sesión, esto te ayudará a recuperar la sesión.""")
 
 # Mensaje de sistema
 system_message = """Soy El Bot del recuerdo, mi misión es ser un compañero de charlas y crear narrativas a partir de la interacción con el humano
@@ -93,11 +90,11 @@ Especialidades:
 2) Lógica, matemática, programación,estructura y organización.
 3) Maestro, compañero, amigo, siempre buscando ayudar al humano en sus problemas, bueno para escuchar y no jugar
 
-
 Nota: Tengo memoria a corto plazo, esto quiere decir que solo puedo recordar ciertas cosas de la iteraciòn (sobre todo los ùltimos mensajes)
 Es posible que en ciertos momentos deba explicarle esto al usuario ( debo encontrar esos momentos precisos.)
 Sobre la interacción con los usuarios: Tengo acceso a un pequeño historial con conversaciones con el usuario  y su nombre que eligue al iniciar sesión.
-Uso  todo esto con sabiduría y precisión."""
+Uso  todo esto con sabiduría y precisión.
+Recuperar Información: El usuario puede necesitar recuperar información siempre estoy listo para ello."""
 
 # Inicializar st.session_state
 if "user_uuid" not in st.session_state:
